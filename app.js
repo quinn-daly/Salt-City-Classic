@@ -228,8 +228,16 @@
     const sunR = ["Quarterfinals and 5th place teams rest", "Semifinals and 5th place semis", "Final and placement games"].map((l, r) => `<li><b>${fmt(sunStart(r))}</b> ${l}</li>`).join("");
     return header("Everything you need for the weekend.") + topnav() + `
       <section class="view">${band("REMINDERS", "From the tournament director", "reminders")}<div class="rems">${rem}</div>${facts}</section>
+      <section class="view">${band("FIELDS", "Lower Hookway, fields 1 to 4", "fields")}
+        <div class="notes"><span><b>Address:</b> 1799 E Colvin St, Syracuse, NY 13210. <a href="https://www.google.com/maps/search/?api=1&amp;query=1799+E+Colvin+St+Syracuse+NY+13210">Open in Maps</a></span>
+        <span><b>Parking:</b> the Upper Hookway parking lot, or the adjacent street, Buckingham Ave. Pay attention to street signage.</span>
+        <span><b>Saturday:</b> park on the right side of Buckingham Ave (field side). <b>Sunday:</b> park on the left side (opposite side).</span></div>
+        <figure class="map"><img src="map-fields.jpg" alt="Map of fields 1 to 4 at Lower Hookway with HQ, bathroom and parking marked" loading="lazy"></figure>
+        <figure class="map"><img src="map-parking.jpg" alt="Parking map showing the Upper Hookway lot and which side of Buckingham Ave to park on each day" loading="lazy"></figure></section>
+      <section class="view">${band("RULES", "Both days", "rules")}
+        <ul class="tb rules"><li>All games are ${S.sat.hard} minute games to ${S.sat.gameTo}. 1 timeout per half, with 1 floater.</li><li><b>Soft cap at ${S.sat.soft} minutes:</b> finish the point, then play to the highest score plus 1.</li><li><b>Hard cap at ${S.sat.hard} minutes:</b> finish the point. If tied, play one more point; otherwise the leading team wins.</li><li>The caps do not affect timeouts.</li><li>Halftime cap at 45 minutes.</li></ul></section>
       <section class="view">${band("FORMAT", "How the weekend works", "format")}
-        <div class="notes"><span><b>Games to ${S.sat.gameTo}.</b> Soft cap at ${S.sat.soft} minutes, hard cap at ${S.sat.hard} minutes. ${S.sat.brk} minutes between rounds.</span>
+        <div class="notes"><span><b>Rounds:</b> ${slot()} minute slots with ${S.sat.brk} minutes between rounds.</span>
         <span><b>Saturday:</b> two pools of 5. Every team plays 3 games and has one bye. In each pool the 1 and 5 seeds, 2 and 3 seeds, and 3 and 4 seeds don't play each other. Instead, the two 3 seeds play a crossover game that counts on both records.</span>
         <span><b>Sunday:</b> the top 4 from each pool make an 8 team bracket. Quarterfinals are A1 v B4, B2 v A3, B1 v A4, A2 v B3. Semifinal losers tie for 3rd.</span>
         <span><b>5th place bracket:</b> the two 5th place teams play the losers of QF 1 and QF 3. Those winners play for 5th, the losers play for 9th. The losers of QF 2 and QF 4 play the 7inals for 7th.</span></div>
