@@ -16,8 +16,8 @@
   --mark: .16;
   --display: "Source Serif 4", Georgia, "Times New Roman", serif;
   --body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --grain: url(assets/wood.jpg);
-  --logo: url(assets/logo.png);
+  --grain: url(wood.jpg);
+  --logo: url(logo.png);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #111010; --card: #1a1817; --soft: #221f1d; --fg: #f3efe9; --muted: #a59e95; --line: #312d29;
