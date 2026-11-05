@@ -1,6 +1,6 @@
 (function () {
   const CFG = window.SCC_CONFIG || {};
-  const PAGE = document.body.dataset.page || "schedule";
+  const PAGE = document.body.dataset.page || "overview";
   const REFRESH_MS = 60000;
   const DEFAULTS = {
     teams: ["Cornell", "Syracuse", "Bing", "Dihll", "RIT", "Yale", "Tula", "Buffalo", "UofR", "Boomers"],
@@ -8,7 +8,8 @@
     sun: { start: 540 },
     scores: {},
     reminders: [],
-    info: []
+    info: [],
+    teamInfo: [["Buds", "Cornell University"], ["Doom", "Syracuse University"], ["Big Bear", "Binghamton University"], ["Dihll", "University of Vermont B"], ["Spudheds", "Rochester Institute of Technology"], ["Superfly", "Yale University"], ["TULA Open", "University of Toronto"], ["Green Eggs and Ham", "University at Buffalo"], ["", "University of Rochester"], ["Doom Alumni", ""]]
   };
   let S = loadCache() || DEFAULTS;
   let status = { kind: CFG.sheetId ? "wait" : "off", text: CFG.sheetId ? "Loading scores…" : "Score sheet not connected yet" };
@@ -152,10 +153,42 @@
     return { out, sits };
   }
 
+  const CONTACTS = [
+    { role: "Tournament Director · Primary contact", name: "Quinn Daly", phone: "(203) 885-5375", primary: true },
+    { role: "Doom President · Secondary contact", name: "Samuel Sutton", email: "doomcaptains@gmail.com", phone: "(360) 932-9751" },
+    { role: "Assistant Director for Competitive Club Sports", name: "Chris Jones", email: "cjones73@syr.edu", phone: "(315) 442-5163" },
+    { role: "Director for Competitive Club Sports", name: "Peter Way", email: "pway03@syr.edu", phone: "(315) 443-3960" }
+  ];
+  const TRAINER = { role: "SU Club Sports Athletic Trainer", name: "Chris Zhao", email: "czhao37@syr.edu", phone: "(804) 484-0046" };
+  const tel = p => "tel:+1" + p.replace(/\D/g, "");
+  const mapsLink = q => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+
+  function band(title, sub, id) { return `<div id="${id}" class="anchor"><div class="band"><h2>${title}</h2><p>${sub}</p></div><div class="grain"></div></div>`; }
+  const statusHTML = () => `<div class="status ${status.kind}"><i></i><span>${esc(status.text)}</span></div>`;
+
+  function siteHeader() {
+    const link = (href, page, label) => `<a href="${href}"${PAGE === page ? ' aria-current="page"' : ""}>${label}</a>`;
+    return `<header class="site"><div class="site-in"><a class="brand" href="index.html"><span class="glyph" aria-hidden="true"></span><span>Salt City Classic</span></a>
+      <nav class="primary" aria-label="Main">${link("index.html", "overview", "Overview")}${link("saturday.html", "saturday", "Saturday")}${link("sunday.html", "sunday", "Sunday")}</nav></div><div class="grain thin"></div></header>`;
+  }
+  function siteFooter() {
+    return `<footer class="site-foot"><div class="grain"></div><p><b>Thank you!</b> We look forward to raising your bar for what a great tournament looks like.</p>
+      <p>Don't forget to follow and tag us <a href="https://www.instagram.com/doom.ultimate/">@doom.ultimate</a> on Instagram.</p>
+      <p class="small">Scores update about once a minute.</p></footer>`;
+  }
+  function pageHero(eyebrow, title, sub) {
+    return `<section class="hero"><div class="mark" aria-hidden="true"></div><span class="eyebrow">${eyebrow}</span><h1>${title}</h1><p class="sub">${sub}</p></section>`;
+  }
+  function mineBanner() {
+    const t = myTeam();
+    if (!t || !S.teams.includes(t)) return `<a class="minechip" href="index.html#team">Pick your team to highlight your games</a>`;
+    return `<a class="minechip on" href="index.html#team">Highlighting <b>${esc(t)}</b><span>Change</span></a>`;
+  }
+
   function viewFinder() {
     const t = myTeam();
     const opts = S.teams.map(n => `<option${n === t ? " selected" : ""}>${esc(n)}</option>`).join("");
-    let body = `<p class="note">Pick your team to see when and where you play.</p>`;
+    let body = `<p class="note">Pick your team to see every game you play this weekend, with times and fields.</p>`;
     if (t && S.teams.includes(t)) {
       const { out, sits } = myGames(t);
       const next = out.find(g => !result(g.id));
@@ -167,10 +200,51 @@
       if (sits.length) body += `<p class="note">Saturday bye: Round ${sits[0] + 1} (${fmt(satStart(sits[0]))}).</p>`;
       if (!["A", "B"].every(p => standings(p).complete)) body += `<p class="note">Sunday games show up here once pool play is final.</p>`;
     }
-    return `<div class="finder"><label for="team-pick">Find your team</label><select id="team-pick"><option value="">Choose a team</option>${opts}</select><div class="mine">${body}</div></div>`;
+    return `<section class="finder anchor" id="team"><label for="team-pick">Find your team</label><select id="team-pick"><option value="">Choose a team</option>${opts}</select><div class="mine">${body}</div></section>`;
   }
 
-  function band(title, sub, id) { return `<div id="${id}" class="anchor"><div class="band"><h2>${title}</h2><p>${sub}</p></div><div class="grain"></div></div>`; }
+  function contactCard(c) {
+    return `<div class="contact${c.primary ? " primary" : ""}"><span class="role">${esc(c.role)}</span><b>${esc(c.name)}</b><a href="${tel(c.phone)}">${esc(c.phone)}</a>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}</div>`;
+  }
+
+  function renderOverview() {
+    const quick = `<nav class="quick" aria-label="On this page"><a href="#team">Your games</a><a href="#glance">Schedule</a><a href="#venue">Venue</a><a href="#rules">Rules</a><a href="#safety">Safety</a><a href="#contacts">Contacts</a></nav>`;
+    const rem = S.reminders.length ? `<section class="view anchor" id="reminders"><h2 class="sec">Reminders</h2><div class="rems">${S.reminders.map(r => `<div class="rem"><b>${esc(r.title)}</b>${r.message ? `<p>${esc(r.message)}</p>` : ""}</div>`).join("")}</div></section>` : "";
+    const satT = [`<li><b>8:30 AM</b>Captain's meeting</li>`].concat(SAT.map((_, r) => `<li><b>${fmt(satStart(r))}</b>Round ${r + 1}</li>`)).join("");
+    const sunT = ["Quarterfinals", "Semifinals and 5th place semis", "Final and placement games"].map((l, r) => `<li><b>${fmt(sunStart(r))}</b>${l}</li>`).join("");
+    const teams = S.teams.map((n, i) => {
+      const [nick, school] = S.teamInfo[i] || ["", ""], p = POOLS.A.includes(i + 1) ? "A" : "B";
+      const title = nick || n, sub = school || (nick && nick !== n ? n : "");
+      return `<div class="tcard ${p}"><span class="no">${i + 1}</span><div><b>${esc(title)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</div><span class="pp">POOL ${p}</span></div>`;
+    }).join("");
+    const facts = S.info.length ? `<dl class="facts">${S.info.map(i => `<div><dt>${esc(i.item)}</dt><dd>${esc(i.details)}</dd></div>`).join("")}</dl>` : "";
+    return siteHeader() + `<main class="wrap">` + pageHero("Fall 2026 · Lower Hookway · Syracuse, NY", "Salt City Classic", `10 teams, 2 pools, 4 fields. Games to ${S.sat.gameTo}.`) + statusHTML() + quick + viewFinder() + rem + `
+      <section class="view anchor" id="glance">${band("THE WEEKEND", "At a glance", "glance-b")}
+        <div class="two"><a class="daycard" href="saturday.html"><h3>Saturday</h3><span>Pool play</span><ul class="times">${satT}</ul><em>Full Saturday schedule and standings</em></a>
+        <a class="daycard" href="sunday.html"><h3>Sunday</h3><span>Bracket play</span><ul class="times">${sunT}</ul><em>Sunday bracket</em></a></div></section>
+      <section class="view anchor" id="teams">${band("TEAMS", "In attendance, by seed", "teams-b")}<div class="tgrid">${teams}</div></section>
+      <section class="view anchor" id="venue">${band("VENUE", "Lower Hookway, fields 1 to 4", "venue-b")}
+        <div class="notes"><span><b>Address:</b> 1799 E Colvin St, Syracuse, NY 13210. <a href="${mapsLink("1799 E Colvin St, Syracuse, NY 13210")}">Open in Maps</a></span>
+        <span><b>Parking:</b> the Upper Hookway parking lot, or the adjacent street, Buckingham Ave. Pay attention to street signage.</span>
+        <span><b>Saturday:</b> park on the right side of Buckingham Ave (field side). <b>Sunday:</b> park on the left side (opposite side).</span></div>
+        ${facts}
+        <figure class="map"><img src="map-fields.jpg" alt="Map of fields 1 to 4 at Lower Hookway with HQ, bathroom and parking marked" loading="lazy"></figure>
+        <figure class="map"><img src="map-parking.jpg" alt="Parking map showing the Upper Hookway lot and which side of Buckingham Ave to park on each day" loading="lazy"></figure></section>
+      <section class="view anchor" id="rules">${band("RULES", "Both days", "rules-b")}
+        <ul class="tb rules"><li>All games are ${S.sat.hard} minute games to ${S.sat.gameTo}. 1 timeout per half, with 1 floater.</li><li><b>Soft cap at ${S.sat.soft} minutes:</b> finish the point, then play to the highest score plus 1.</li><li><b>Hard cap at ${S.sat.hard} minutes:</b> finish the point. If tied, play one more point; otherwise the leading team wins.</li><li>The caps do not affect timeouts.</li><li>Halftime cap at 45 minutes.</li></ul>
+        <p class="note">Pool play format and tiebreakers are on the <a href="saturday.html#format">Saturday page</a>. The bracket format is on the <a href="sunday.html#format">Sunday page</a>.</p></section>
+      <section class="view anchor" id="safety">${band("HEALTH AND SAFETY", "Trainer and hospital", "safety-b")}
+        <a class="sos" href="tel:911"><b>Emergency? Call 911.</b><span>Then find the trainer or the tournament director, Quinn Daly, (203) 885-5375.</span></a>
+        <div class="two">${contactCard(TRAINER)}
+        <div class="contact"><span class="role">Nearest hospital, 8 minutes from the fields</span><b>Crouse Hospital</b><span>736 Irving Ave, Syracuse, NY 13210</span><a href="${mapsLink("Crouse Hospital, 736 Irving Ave, Syracuse, NY 13210")}">Directions</a></div></div></section>
+      <section class="view anchor" id="contacts">${band("CONTACTS", "Tournament staff", "contacts-b")}<div class="cgrid">${CONTACTS.map(contactCard).join("")}</div></section>
+      <section class="view anchor" id="onsite">${band("ON SITE", "Food, water, spirit and trash", "onsite-b")}
+        <div class="cgrid">
+          <div class="info-card"><h3>Food and water</h3><p>A tournament snack table will be provided at tourney central.</p><p>There will be Gatorade water jugs scattered around the fields.</p></div>
+          <div class="info-card"><h3>Spirit</h3><p>Spirit of the Game is an essential part of College Ultimate. Spirit ensures that the game is played with respect, control, intelligence, and energy. Have fun, be loud, be safe.</p><p>For any spirit related questions reach out to vibes captain Christopher Kilbridge (<a href="mailto:ctkilbri@syr.edu">ctkilbri@syr.edu</a>).</p></div>
+          <div class="info-card"><h3>Trash and recycling</h3><p>Trash bags will be given to each team. There will be larger trash bins at tournament central. Please ensure there is no trash left behind on the fields so we can continue to use them in years to come.</p></div>
+        </div></section></main>` + siteFooter();
+  }
 
   function viewSat() {
     const rounds = SAT.map((rd, r) => {
@@ -178,79 +252,50 @@
       const games = rd.map((g, i) => g ? gameCard(satId(r, i + 1), g[2], g[2] === "X" ? "Crossover · 3 seeds" : "Pool " + g[2], "Field " + (i + 1), { name: teamOf(g[0]) }, { name: teamOf(g[1]) }) : "").join("");
       return `<div class="round"><div class="rhead"><h3>Round ${r + 1}</h3><span class="t">${fmt(s)} to ${fmtS(s + slot())}</span><span class="cap">Soft cap ${fmtS(s + S.sat.soft)} · Hard cap ${fmtS(s + S.sat.hard)}${rd.includes(null) ? " · Field 4 open" : ""}</span></div><div class="games">${games}</div><div class="rest">Bye: <b>${sitting(r).map(teamOf).map(esc).join(", ")}</b></div></div>`;
     }).join("");
-    return `<section class="view">${band("SATURDAY", "Pool play", "saturday")}${rounds}</section>`;
+    return `<section class="view">${band("SCHEDULE", "Pool play, 4 rounds", "schedule")}${rounds}</section>`;
   }
-
   function viewStandings() {
     const pools = ["A", "B"].map(p => {
       const s = standings(p);
       const rows = s.list.map((x, i) => `<tr class="z${i < 4 ? "in" : "out"}"><td class="tm"><span class="sd">${i + 1}</span><b>${esc(teamOf(x.k))}</b></td><td>${x.w}-${x.l}</td><td>${x.sos}</td><td>${x.pdCap > 0 ? "+" : ""}${x.pdCap}</td><td>#${rankOf(x.k)}</td></tr>`).join("");
       return `<div class="table ${p}"><h3>Pool ${p}<span>${s.complete ? "Final" : s.done + " of " + s.total + " games in"}</span></h3><table><thead><tr><th class="tm">Team</th><th>W-L</th><th title="Strength of schedule">SOS</th><th title="Point differential, capped at 5 per game">+/-</th><th>Seed</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join("");
-    return `<section class="view">${band("STANDINGS", "Live from Saturday's scores", "standings")}<div class="pools">${pools}</div><p class="foot">Top 4 in each pool make the championship bracket. 5th place teams go to the 5th place bracket. <a href="info.html#tiebreakers">How ties are broken</a></p></section>`;
+    return `<section class="view">${band("STANDINGS", "Live from Saturday's scores", "standings")}<div class="pools">${pools}</div><p class="foot">Shaded: top 4 in each pool, headed to the championship bracket. 5th place goes to the 5th place bracket.</p></section>`;
+  }
+  function renderSaturday() {
+    const jump = `<nav class="quick" aria-label="On this page"><a href="#schedule">Schedule</a><a href="#standings">Standings</a><a href="#format">Format</a><a href="#tiebreakers">Tiebreakers</a></nav>`;
+    return siteHeader() + `<main class="wrap">` + pageHero("Day 1 · Pool play", "Saturday", `Round 1 starts at ${fmt(satStart(0))}. Captain's meeting at 8:30 AM.`) + statusHTML() + mineBanner() + jump + viewSat() + viewStandings() + `
+      <section class="view anchor" id="format">${band("FORMAT", "How pool play works", "format-b")}
+        <div class="notes"><span>Two pools of 5. Every team plays 3 games and has one bye.</span>
+        <span>In each pool the 1 and 5 seeds, 2 and 3 seeds, and 3 and 4 seeds don't play each other. Instead, the two 3 seeds play a crossover game that counts on both records.</span>
+        <span>Rounds are ${slot()} minute slots with ${S.sat.brk} minutes between rounds.</span></div></section>
+      <section class="view anchor" id="tiebreakers">${band("TIEBREAKERS", "How pool ties are broken", "tiebreakers-b")}
+        <ol class="tb"><li><b>Record.</b> Wins out of 3, crossover included.</li><li><b>Head to head.</b> Only if every tied team played each other.</li><li><b>Strength of schedule.</b> Total Saturday wins of your opponents, not counting their games against you.</li><li><b>Common opponent point differential.</b> Margins against opponents all tied teams played. No cap.</li><li><b>Point differential.</b> All 3 games, capped at 5 per game.</li><li><b>Original seed.</b></li></ol>
+        <p class="note">With three or more teams tied, apply each step to the whole group. Once a team is separated, start again from head to head with the teams still tied.</p></section></main>` + siteFooter();
   }
 
-  function viewSun() {
+  function renderSunday() {
     const r = result("SUN-FINAL"); let champ = "";
     if (r) { const g = sunGame("SUN-FINAL"), w = (r.aw ? side(g.a) : side(g.b)).name; if (w) champ = `<div class="champ"><small>SALT CITY CLASSIC CHAMPION</small><b>${esc(w)}</b></div>`; }
     const heads = `<div class="bh" style="grid-area:h1">Quarters <b>${fmtS(sunStart(0))}</b></div><div class="bh" style="grid-area:h2">Semis <b>${fmtS(sunStart(1))}</b></div><div class="bh" style="grid-area:h3">Final <b>${fmtS(sunStart(2))}</b></div>`;
     const gold = `<div class="bracket gold">${heads}${["SUN-QF1", "SUN-QF2", "SUN-QF3", "SUN-QF4", "SUN-SF1", "SUN-SF2", "SUN-FINAL"].map(id => bracketMatch(id)).join("")}<div class="cn" style="grid-area:c1"></div><div class="cn" style="grid-area:c2"></div><div class="cn tall" style="grid-area:c3"></div></div>`;
     const five = `<div class="bracket mini"><div class="bh" style="grid-area:h1">5th place semis <b>${fmtS(sunStart(1))}</b></div><div class="bh" style="grid-area:h2">5th place final <b>${fmtS(sunStart(2))}</b></div>${bracketMatch("SUN-C1")}${bracketMatch("SUN-C2")}${bracketMatch("SUN-5TH")}<div class="cn" style="grid-area:c1"></div></div>`;
     const more = ["SUN-7TH", "SUN-9TH"].map(id => { const g = sunGame(id); return gameCard(id, "X", g.lab, fmtS(sunStart(g.r)) + " · Field " + g.f, side(g.a), side(g.b)); }).join("");
-    return `<section class="view">${band("SUNDAY", "Championship bracket", "sunday")}${champ}
-      <div class="scroller">${gold}</div><p class="foot">Semifinal losers tie for 3rd. Teams fill in when pool play is final; winners move on as scores come in.</p>
-      <h2 class="sec">5th place bracket</h2><p class="note">Pool 5th place teams play the losers of QF 1 and QF 3. Win and you play for 5th.</p>
-      <div class="scroller">${five}</div>
-      <h2 class="sec">Placement games</h2><div class="games">${more}</div></section>`;
-  }
-
-  function header(sub) {
-    return `<header class="top"><div class="mark" aria-hidden="true"></div><span class="eyebrow">Fall 2026 · 10 teams · 2 pools · 4 fields</span><h1>Salt City Classic</h1><p class="sub">${sub}</p><div class="grain"></div></header>`;
-  }
-  function topnav() {
-    return `<nav class="pages" aria-label="Pages"><a href="index.html"${PAGE === "schedule" ? ' aria-current="page"' : ""}>Schedule</a><a href="info.html"${PAGE === "info" ? ' aria-current="page"' : ""}>Tournament info</a></nav>`;
-  }
-  const statusHTML = () => `<div class="status ${status.kind}"><i></i><span>${esc(status.text)}</span></div>`;
-
-  function renderSchedule() {
-    const jump = `<nav class="tabs" aria-label="Jump to"><a href="#saturday">Saturday</a><a href="#standings">Standings</a><a href="#sunday">Sunday</a></nav>`;
-    const rem = S.reminders.length ? `<a class="remlink" href="info.html#reminders"><b>${esc(S.reminders[0].title)}</b>${S.reminders.length > 1 ? `<span>+${S.reminders.length - 1} more reminders</span>` : "<span>Tournament info</span>"}</a>` : "";
-    return header(`Live schedule and scores. Games to ${S.sat.gameTo}, ${S.sat.hard} minute hard cap.`) + topnav() + statusHTML() + rem + viewFinder() + jump + viewSat() + viewStandings() + viewSun();
-  }
-
-  function renderInfo() {
-    const rem = S.reminders.length
-      ? S.reminders.map(r => `<div class="rem"><b>${esc(r.title)}</b>${r.message ? `<p>${esc(r.message)}</p>` : ""}</div>`).join("")
-      : `<p class="note">No reminders yet. Check back closer to the weekend.</p>`;
-    const facts = S.info.length ? `<dl class="facts">${S.info.map(i => `<div><dt>${esc(i.item)}</dt><dd>${esc(i.details)}</dd></div>`).join("")}</dl>` : "";
-    const pools = ["A", "B"].map(p => `<div class="table ${p}"><h3>Pool ${p}</h3><table><tbody>${[1, 2, 3, 4, 5].map(i => `<tr><td class="tm"><span class="sd">#${rankOf(p + i)}</span><b>${esc(teamOf(p + i))}</b></td></tr>`).join("")}</tbody></table></div>`).join("");
-    const rounds = SAT.map((_, r) => `<li><b>Round ${r + 1}</b> ${fmt(satStart(r))} to ${fmtS(satStart(r) + slot())}</li>`).join("");
-    const sunR = ["Quarterfinals and 5th place teams rest", "Semifinals and 5th place semis", "Final and placement games"].map((l, r) => `<li><b>${fmt(sunStart(r))}</b> ${l}</li>`).join("");
-    return header("Everything you need for the weekend.") + topnav() + `
-      <section class="view">${band("REMINDERS", "From the tournament director", "reminders")}<div class="rems">${rem}</div>${facts}</section>
-      <section class="view">${band("FIELDS", "Lower Hookway, fields 1 to 4", "fields")}
-        <div class="notes"><span><b>Address:</b> 1799 E Colvin St, Syracuse, NY 13210. <a href="https://www.google.com/maps/search/?api=1&amp;query=1799+E+Colvin+St+Syracuse+NY+13210">Open in Maps</a></span>
-        <span><b>Parking:</b> the Upper Hookway parking lot, or the adjacent street, Buckingham Ave. Pay attention to street signage.</span>
-        <span><b>Saturday:</b> park on the right side of Buckingham Ave (field side). <b>Sunday:</b> park on the left side (opposite side).</span></div>
-        <figure class="map"><img src="map-fields.jpg" alt="Map of fields 1 to 4 at Lower Hookway with HQ, bathroom and parking marked" loading="lazy"></figure>
-        <figure class="map"><img src="map-parking.jpg" alt="Parking map showing the Upper Hookway lot and which side of Buckingham Ave to park on each day" loading="lazy"></figure></section>
-      <section class="view">${band("RULES", "Both days", "rules")}
-        <ul class="tb rules"><li>All games are ${S.sat.hard} minute games to ${S.sat.gameTo}. 1 timeout per half, with 1 floater.</li><li><b>Soft cap at ${S.sat.soft} minutes:</b> finish the point, then play to the highest score plus 1.</li><li><b>Hard cap at ${S.sat.hard} minutes:</b> finish the point. If tied, play one more point; otherwise the leading team wins.</li><li>The caps do not affect timeouts.</li><li>Halftime cap at 45 minutes.</li></ul></section>
-      <section class="view">${band("FORMAT", "How the weekend works", "format")}
-        <div class="notes"><span><b>Rounds:</b> ${slot()} minute slots with ${S.sat.brk} minutes between rounds.</span>
-        <span><b>Saturday:</b> two pools of 5. Every team plays 3 games and has one bye. In each pool the 1 and 5 seeds, 2 and 3 seeds, and 3 and 4 seeds don't play each other. Instead, the two 3 seeds play a crossover game that counts on both records.</span>
-        <span><b>Sunday:</b> the top 4 from each pool make an 8 team bracket. Quarterfinals are A1 v B4, B2 v A3, B1 v A4, A2 v B3. Semifinal losers tie for 3rd.</span>
-        <span><b>5th place bracket:</b> the two 5th place teams play the losers of QF 1 and QF 3. Those winners play for 5th, the losers play for 9th. The losers of QF 2 and QF 4 play the 7inals for 7th.</span></div>
-        <div class="two"><div><h3 class="mini-h">Saturday</h3><ul class="times">${rounds}</ul></div><div><h3 class="mini-h">Sunday</h3><ul class="times">${sunR}</ul></div></div>
-        <h3 class="mini-h">Pools</h3><div class="pools">${pools}</div></section>
-      <section class="view">${band("TIEBREAKERS", "How pool ties are broken", "tiebreakers")}
-        <ol class="tb"><li><b>Record.</b> Wins out of 3, crossover included.</li><li><b>Head to head.</b> Only if every tied team played each other.</li><li><b>Strength of schedule.</b> Total Saturday wins of your opponents, not counting their games against you.</li><li><b>Common opponent point differential.</b> Margins against opponents all tied teams played. No cap.</li><li><b>Point differential.</b> All 3 games, capped at 5 per game.</li><li><b>Original seed.</b></li></ol>
-        <p class="note">With three or more teams tied, apply each step to the whole group. Once a team is separated, start again from head to head with the teams still tied.</p></section>`;
+    const jump = `<nav class="quick" aria-label="On this page"><a href="#bracket">Championship</a><a href="#fifth">5th place</a><a href="#placement">7th and 9th</a><a href="#format">Format</a></nav>`;
+    return siteHeader() + `<main class="wrap">` + pageHero("Day 2 · Bracket play", "Sunday", `Quarterfinals at ${fmt(sunStart(0))}. Final at ${fmt(sunStart(2))}.`) + statusHTML() + mineBanner() + jump + `
+      <section class="view">${band("CHAMPIONSHIP", "Top 4 from each pool", "bracket")}${champ}
+        <div class="scroller">${gold}</div><p class="foot">Semifinal losers tie for 3rd. Teams fill in when pool play is final; winners move on as scores come in.</p></section>
+      <section class="view">${band("5TH PLACE", "Pool 5th place teams and QF 1 and 3 losers", "fifth")}<div class="scroller">${five}</div><p class="note">Win the 5th place semi and you play for 5th. Lose it and you play for 9th.</p></section>
+      <section class="view">${band("PLACEMENT", "The 7inals and 9th place", "placement")}<div class="games">${more}</div></section>
+      <section class="view anchor" id="format">${band("FORMAT", "How Sunday works", "format-b")}
+        <div class="notes"><span>The top 4 from each pool make an 8 team bracket. Quarterfinals are A1 v B4, B2 v A3, B1 v A4 and A2 v B3. Semifinal losers tie for 3rd.</span>
+        <span>The two 5th place teams rest during the quarterfinals, then play the losers of QF 1 and QF 3. Those winners play for 5th; the losers play for 9th.</span>
+        <span>The losers of QF 2 and QF 4 play the 7inals for 7th.</span></div></section></main>` + siteFooter();
   }
 
   function render() {
     const y = window.scrollY;
-    document.getElementById("app").innerHTML = PAGE === "info" ? renderInfo() : renderSchedule();
+    document.getElementById("app").innerHTML = PAGE === "saturday" ? renderSaturday() : PAGE === "sunday" ? renderSunday() : renderOverview();
     window.scrollTo(0, y);
   }
 
@@ -294,7 +339,7 @@
       render(); return;
     }
     const next = JSON.parse(JSON.stringify(DEFAULTS));
-    objects(tm).forEach(o => { const k = parseInt(o.rank, 10); if (k >= 1 && k <= 10 && o.team) next.teams[k - 1] = o.team; });
+    objects(tm).forEach(o => { const k = parseInt(o.rank, 10); if (k >= 1 && k <= 10 && o.team) { next.teams[k - 1] = o.team; if ("team name" in o || "school" in o) next.teamInfo[k - 1] = [o["team name"] || "", o.school || ""]; } });
     const st = objects(se)[0] || {};
     next.sat = { start: parseTime(st.sat_start, 540), brk: num(st.break_min, 15), soft: num(st.soft_cap, 80), hard: num(st.hard_cap, 90), gameTo: num(st.game_to, 15) };
     next.sun = { start: parseTime(st.sun_start, 540) };
@@ -310,8 +355,8 @@
     status = { kind: "", text: "Live · updated " + fmt(d.getHours() * 60 + d.getMinutes()) };
     render();
   }
-  function loadCache() { try { const v = JSON.parse(localStorage.getItem("scc-data-v2") || "null"); return v && v.teams ? v : null; } catch (e) { return null; } }
-  function saveCache(v) { try { localStorage.setItem("scc-data-v2", JSON.stringify(v)); } catch (e) {} }
+  function loadCache() { try { const v = JSON.parse(localStorage.getItem("scc-data-v3") || "null"); return v && v.teams && v.teamInfo ? v : null; } catch (e) { return null; } }
+  function saveCache(v) { try { localStorage.setItem("scc-data-v3", JSON.stringify(v)); } catch (e) {} }
 
   document.addEventListener("change", e => { if (e.target.id === "team-pick") { setMyTeam(e.target.value); render(); } });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
