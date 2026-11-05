@@ -1,30 +1,32 @@
 # Salt City Classic
 
-Live schedule, scores and brackets for the Salt City Classic. Phones are the main audience; score reporters update a Google Sheet and the site picks up changes about once a minute.
+Live site for the Salt City Classic: saltcityclassic.com
 
-## How it works
+## Pages
 
-- `index.html`, `styles.css`, `app.js`: the site. No build step.
-- The site reads three tabs from the Google Sheet **Salt City Classic Scores**: `Scores`, `Teams`, `Settings`.
-- Standings, tiebreakers (wins, head to head, point differential), Sunday seeding, byes and bracket advancement are all calculated on the page from the scores.
+- `index.html`: Overview. Find your team, latest announcement, venue and maps, teams, rules and tiebreakers, safety, contacts, on site info.
+- `saturday.html`: pool play schedule, live standings, format, tiebreakers.
+- `sunday.html`: championship bracket, 5th place bracket, 7inals and 9th place.
+- `announcements.html`: TD announcements with comments and replies (the "News" tab).
+- `info.html`: redirects to the Overview.
 
-## One time setup
+`app.js` builds every page; `styles.css` styles them. No build step.
 
-1. **Share the sheet for reading.** Open the sheet, click **Share**, set General access to **Anyone with the link: Viewer**. The site can't read it otherwise.
-2. **Add score reporters.** In the same Share dialog, add each reporter's email as **Editor**.
-3. **Push this folder** to a new GitHub repo (for example `salt-city-classic`).
-4. **Turn on Pages.** Repo **Settings > Pages > Deploy from a branch**, branch `main`, folder `/ (root)`.
-5. Open `https://<your-username>.github.io/salt-city-classic/` and share that link with teams.
+## Data: the Salt City Classic Scores Google Sheet
 
-The sheet ID lives in `index.html` (`SCC_CONFIG.sheetId`). Change it there if you ever swap sheets.
+The sheet ID and comment URL live in `SCC_CONFIG` at the top of each HTML page.
 
-## Reporting scores
+| Tab | What it does |
+|---|---|
+| Scores | Reporters type Score 1 and Score 2. The site updates within about a minute. |
+| Teams | Seeds 1 to 10, display name, team name, school. |
+| Settings | Start times, break, soft and hard caps, game to. |
+| Announcements | Tick Show to post. Give each post the next Post ID. |
+| Comments | Filled in by the site. Tick Hide to take a comment down. |
+| Info | Optional extra venue details shown on the Overview. |
 
-On the **Scores** tab, find the row by Game ID, then type Score 1 (Team 1) and Score 2 (Team 2). Clear both cells to un-report a game. For Sunday games, Team 1 is the top team shown for that game on the site.
+The sheet must be shared as "Anyone with the link: Viewer".
 
-## TD settings
+## Comments
 
-- **Teams** tab: seed order 1 to 10. Renaming a team here renames it everywhere.
-- **Settings** tab: `sat_start`, `break_min`, `soft_cap`, `hard_cap`, `game_to`, `sun_start`. Round times are calculated as hard cap + 5 minutes per slot, plus the break.
-
-Keep the tab names and column headers as they are; the site looks them up by name.
+`sheet-script/Code.gs` is the Apps Script deployed from the sheet (Extensions > Apps Script, deployed as a web app: execute as me, access anyone). If you redeploy it as a new deployment, update `commentsUrl` in the HTML pages.
