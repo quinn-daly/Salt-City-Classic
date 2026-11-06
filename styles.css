@@ -338,3 +338,11 @@ button.post { background: var(--ink); color: var(--on-ink); border: 0; border-ra
 .hero.compact { min-height: 84px; display: flex; align-items: center; padding-top: 10px; padding-bottom: 6px; }
 .hero.compact h1 { font-size: clamp(34px, 10vw, 56px); padding-right: 76px; }
 .hero.compact .mark { width: 62px; max-width: none; top: 50%; right: 2px; transform: translateY(-46%); }
+
+.g.C::before, .plist.C::before { filter: grayscale(1) brightness(.3); }
+.plists { grid-template-columns: 1fr; }
+.plist ol { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 10px; }
+.plist h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.plist h3 small { display: inline; }
+.plist h3 small { display: block; font-size: 10px; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.round > .note { margin: 0; }

@@ -6,7 +6,7 @@ Live site for the Salt City Classic: saltcityclassic.com
 
 - `index.html`: Overview. Find your team, latest announcement, venue and maps, teams, rules and tiebreakers, safety, contacts, on site info.
 - `saturday.html`: pool play schedule, live standings, format, tiebreakers.
-- `sunday.html`: championship bracket, 5th place bracket, 7inals and 9th place.
+- `sunday.html`: placeholder until the Sunday format is set.
 - `announcements.html`: TD announcements with comments and replies (the "News" tab).
 - `info.html`: redirects to the Overview.
 
